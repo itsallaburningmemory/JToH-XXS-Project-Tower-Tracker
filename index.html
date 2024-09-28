@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JToH XXS Tower Tracker</title>
+    <style>
+        /* CSS Styles */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f5f5f5;
+            margin: 0;
+        }
+        #app {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
+            max-height: 80vh;
+        }
+        input[type="text"] {
+            padding: 10px;
+            width: 80%;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        #rings {
+            margin-top: 20px;
+        }
+        .ring {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f1f1f1;
+            text-align: left;
+        }
+        .ring-header {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .tower {
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin: 5px 0;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            display: flex;
+            justify-content: space-between;
+        }
+        .owned {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .not-owned {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h2>JToH XXS Tower Tracker</h2>
+        <input type="text" id="username" placeholder="Enter your Roblox username">
+        <button onclick="checkBadges()">Check Badges</button>
+        <div id="rings"></div>
+    </div>
+    <script>
+        // Sample data for rings and towers with badge IDs
+        const rings = [
+            {
+                name: "Ring 1",
+                towers: [
+                    { name: "Room of Annoyingly Simple Trials", difficulty: "Easy", badgeId: 600775225109428 },
+                    { name: "Room of Anger", difficulty: "Easy", badgeId: 289899390648178 },
+                    { name: "Not Even A Room", difficulty: "Easy", badgeId: 605918480010527 },
+                    { name: "Room of Madness", difficulty: "Medium", badgeId: 371187137091331 },
+                    { name: "Room of Hecc", difficulty: "Hard", badgeId: 4351940253702928 },
+                    { name: "Room of Killjoys", difficulty: "Hard", badgeId: 3693309010170101 },
+                    { name: "Room of Keyboard Yeeting", difficulty: "Difficult", badgeId: 1984369590835718 },
+                    { name: "Room of Stress", difficulty: "Difficult", badgeId: 1288545467002827 },
+                    { name: "Room of Screen Punching", difficulty: "Challenging", badgeId: 499724704859288 },
+                    { name: "Room of Rage", difficulty: "Challenging", badgeId: 3578824442255537 },
+                    { name: "Room of Impossible Expectations", difficulty: "Challenging", badgeId: 778775410265219 },
+                    { name: "Room of Moderate Enragement", difficulty: "Intense", badgeId: 1482385170435840 },
+                    { name: "Edifice of Laptop Splitting", difficulty: "Intense", badgeId: 601070918542492 },
+                    { name: "Room of True Skill", difficulty: "Remorseless", badgeId: 4010544577456507 },
+                    { name: "Ring 1 Room Rush", difficulty: "Remorseless", badgeId: 2642954592883324 },
+                    { name: "Thanos Room", difficulty: "Insane", badgeId: 1532025350947666 }
+                ]
+            }
+        ];
+
+        // Function to display the rings and towers
+        function displayRings() {
+            const ringsContainer = document.getElementById("rings");
+            ringsContainer.innerHTML = ""; // Clear previous data
+
+            rings.forEach(ring => {
+                const ringElement = document.createElement("div");
+                ringElement.classList.add("ring");
+
+                const ringHeader = document.createElement("div");
+                ringHeader.classList.add("ring-header");
+                ringHeader.textContent = ring.name;
+
+                ringElement.appendChild(ringHeader);
+
+                ring.towers.forEach(tower => {
+                    const towerElement = document.createElement("div");
+                    towerElement.classList.add("tower", "not-owned");
+                    towerElement.id = `tower-${tower.badgeId}`;
+                    towerElement.innerHTML = `<strong>${tower.name}</strong> - Difficulty: ${tower.difficulty}`;
+                    ringElement.appendChild(towerElement);
+                });
+
+                ringsContainer.appendChild(ringElement);
+            });
+        }
+
+        // Function to check badges for the inputted Roblox username
+        async function checkBadges() {
+            const username = document.getElementById("username").value.trim();
+            
+            if (username === "") {
+                alert("Please enter a Roblox username");
+                return;
+            }
+
+            try {
+                // Get the user's ID based on the username
+                const userIdResponse = await fetch(`https://users.roblox.com/v1/users/search?keyword=${username}&limit=1`);
+                const userIdData = await userIdResponse.json();
+                
+                if (!userIdData.data || userIdData.data.length === 0) {
+                    alert("User not found");
+                    return;
+                }
+
+                const userId = userIdData.data[0].id;
+
+                // Get the user's owned badges
+                const badgesResponse = await fetch(`https://badges.roblox.com/v1/users/${userId}/badges?limit=100`);
+                const badgesData = await badgesResponse.json();
+
+                const ownedBadgeIds = badgesData.data.map(badge => badge.id);
+
+                // Update tower display based on badge ownership
+                rings.forEach(ring => {
+                    ring.towers.forEach(tower => {
+                        const towerElement = document.getElementById(`tower-${tower.badgeId}`);
+                        if (ownedBadgeIds.includes(tower.badgeId)) {
+                            towerElement.classList.remove("not-owned");
+                            towerElement.classList.add("owned");
+                        }
+                    });
+                });
+
+                alert("Badge check complete!");
+
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                alert("There was an error fetching the data. Please try again later.");
+            }
+        }
+
+        // Initialize display
+        displayRings();
+    </script>
+</body>
+</html>
